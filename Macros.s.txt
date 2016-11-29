@@ -1,0 +1,11 @@
+.set SYS_exit,1
+
+
+.macro exit_program
+     set    stdout,%o0
+     call fflush
+     nop
+     clr %o0
+     mov SYS_exit,%g1
+     ta 0x90
+.endm

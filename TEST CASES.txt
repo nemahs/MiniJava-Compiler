@@ -1,0 +1,8 @@
+TreeVisitor.java	WORKS (modified to remove the polymorphism)
+QuickSort.java		WORKS
+LinkedList.java		WORKS (same warnings as Bubble)
+LinearSearch.java	WORKS
+Factorial.java		WORKS
+BubbleSort.java		WORKS (with a warning)
+BinaryTree.java		WORKS
+BinarySearch.java	WORKS

@@ -1,0 +1,279 @@
+PARSER_BEGIN (MiniJava)
+		package compiler;
+
+        import syntax.*;
+		import compiler.Compiler;
+        
+	public class MiniJava {
+
+		public static void main(String args[]) {
+			Compiler.main(args);
+		}
+	}
+PARSER_END(MiniJava)
+
+
+TOKEN : {
+	<IF: "if" > 
+|	<ELSE: "else">
+|	<WHILE: "while">
+|	<RETURN: "return">
+|	<NEW: "new">
+|	<CLASS: "class" >
+|	<PUBLIC: "public">
+|	<STATIC: "static">
+|	<VOID: "void">
+|	<MAIN: "main">
+|	<LENGTH: "length">
+|	<THIS: "this">
+|	<STRING: "String">
+|	<EXTENDS: "extends">
+|	<PRINTLN: "System.out.println">
+|	<TRUE: "true">
+|	<FALSE: "false">
+|  	<#DIGIT:  ["0"-"9"] > 
+|	<#CHAR: (["a"-"z"]|["A"-"Z"])>
+}
+
+// Separators
+TOKEN :
+{
+	<LBRACE: "{">
+|	<RBRACE: "}">
+|	<LPAREN: "(">
+|	<RPAREN: ")">
+|	<LBRACKET: "[">
+|	<RBRACKET: "]">
+|	<SEMICOLON: ";">
+|	<DOT: ".">
+|	<COMMA: ",">
+}
+
+//Operators
+TOKEN: 
+{
+	<ASSIGN: "=">
+|	<GT: ">">
+|	<LT: "<">
+|	<BANG: "!">
+|	<AND: "&&">
+|	<PLUS: "+">
+|	<MINUS: "-">
+|	<TIMES: "*">
+}
+
+//Type
+TOKEN:
+{
+	<INTARRAY: "int[]">
+|	<INT: "int">
+|	<BOOL: "boolean" >
+}
+
+//Generics
+TOKEN:
+{
+	<ID: (<CHAR>) (<CHAR>|<DIGIT>|"_") * >
+|	<NUM: (<DIGIT>)+>
+|	<REAL: ( (<DIGIT>)+ "." (<DIGIT>)*) |
+			( (<DIGIT>) * "." (<DIGIT>)+ ) >
+}
+
+SKIP : 
+{
+	<"//"> : LINE_COMMENT
+|	<"/*"> : MULTI_COMMENT
+	| " "
+	| "\t"
+	| "\n"
+}
+
+<LINE_COMMENT> SKIP:
+{
+	<("\r"|"\n"|"\r\n")> : DEFAULT
+|	<~[]>
+}
+
+<MULTI_COMMENT> SKIP:
+{
+	<"*/"> : DEFAULT
+|	<~[]>
+}
+
+JAVACODE
+void error_to(int kind)
+{
+	ParseException e = generateParseException();  // generate the exception object.
+	System.err.println(e.toString());  // print the error message
+	Token t;
+	do {
+		t = getNextToken();
+	} while (t.kind != kind);
+        Compiler.errors++;
+}
+
+Program Goal():
+{MainClass mc; LinkedList<ClassDecl> classes = new LinkedList<ClassDecl>();}
+{
+	mc = MainClass()
+	({ClassDecl cl;} cl=ClassDeclaration() {classes.add(cl);})*
+	<EOF>
+        {return new Program(mc, classes);}
+}
+
+MainClass MainClass():
+{Identifier className; Identifier argsName; Statement s; Token t;}
+{
+	<CLASS> t=<ID> {className = new Identifier(t.beginLine, t.beginColumn, t.image);}
+	"{"
+		<PUBLIC> <STATIC> <VOID> <MAIN> "(" "String" "[" "]" t=<ID> {argsName = new Identifier(t.beginLine, t.beginColumn, t.image);} ")" 
+		"{"
+			s=Statement()
+		"}"
+	"}" {return new MainClass(className, argsName, s);}
+}
+
+ClassDecl ClassDeclaration():
+{LinkedList<VarDecl> vars = new LinkedList<VarDecl>(); LinkedList<MethodDecl> methods = new LinkedList<MethodDecl>(); Identifier id; Identifier extend = null; boolean extending = false; Token t;}
+{
+	try
+	{
+		<CLASS> t=<ID> {id = new Identifier(t.beginLine, t.beginColumn, t.image);}  ["extends" t=<ID> {extending = true; extend = new Identifier(t.beginLine, t.beginColumn, t.image);}]
+		"{"
+			({VarDecl var;} var=VarDeclaration() {vars.add(var);})*
+			({MethodDecl meth;} meth=MethodDeclaration() {methods.add(meth);} )*
+                    
+		"}"
+                   {if (extending)
+                    {
+                        return new ExtendingClassDecl(id, extend, vars, methods);
+                    }           
+                      return new SimpleClassDecl(id, vars, methods);
+                   }
+	}
+	catch (ParseException e)
+	{
+		error_to(RBRACE);
+                return null;
+	}
+}
+
+VarDecl VarDeclaration():
+{Identifier id; Type t; Token token;}
+{
+	try
+	{
+		t=Type() token=<ID> ";" {id = new Identifier(token.beginLine, token.beginColumn, token.image);}
+                {return new VarDecl(t, id);}
+	}
+	catch (ParseException e)
+	{
+		error_to(SEMICOLON);
+                return null;
+	}
+}
+
+MethodDecl MethodDeclaration():
+{Identifier id; Token t; Type type; LinkedList<Formal> formals = new LinkedList<Formal>(); LinkedList<VarDecl> vars = new LinkedList<VarDecl>(); LinkedList<Statement> statements = new LinkedList<Statement>(); Expression ex;}
+{
+	try
+	{
+		<PUBLIC> type=Type() t=<ID> {id = new Identifier(t.beginLine, t.beginColumn, t.image);} "("
+                         [ {Type ttype; Token tt;}
+                        ttype=Type() tt=<ID> {formals.add(new Formal(ttype, new Identifier(tt.beginLine, tt.beginColumn, tt.image)));} 
+                        ("," ttype=Type() tt=<ID> {formals.add(new Formal(ttype, new Identifier(tt.beginLine, tt.beginColumn, tt.image)));})*
+                        ] ")"
+		"{"
+			(LOOKAHEAD(2) {VarDecl var;} var=VarDeclaration() {vars.add(var);})* 
+                        ({Statement s;} s=Statement() {statements.add(s);} )*
+			<RETURN> ex=Expression() ";" 
+		"}"
+                {return new MethodDecl(type, id, formals, vars, statements, ex);}
+	}
+	catch (ParseException e)
+	{
+		error_to(SEMICOLON);
+                return null;
+	}
+}
+
+Type Type():
+{Token t;}
+{
+	try
+	{
+		<INTARRAY> {return Type.THE_INT_ARRAY_TYPE;}
+		| <BOOL> {return Type.THE_BOOLEAN_TYPE;}
+		| <INT> {return Type.THE_INTEGER_TYPE;}
+		| t=<ID> {return new IdentifierType(t.beginLine, t.beginColumn, t.image);}
+	}
+	catch (ParseException e)
+	{
+		error_to(SEMICOLON);
+                return null;
+	}
+}
+
+Statement Statement():
+{Token t; Expression ex; Statement s1; Statement s2; Identifier id; Expression ex1; LinkedList<Statement> states = new LinkedList<Statement>();}
+{
+	try
+	{
+		"{" (s1=Statement() {states.add(s1);})* "}" {return new Block(states);}
+		| t=<IF> "(" ex=Expression() ")" s1=Statement() <ELSE> s2=Statement() {return new If(ex,s1,s2);}
+		| t=<WHILE> "(" ex=Expression() ")" s1=Statement() {return new While(ex,s1);}
+		| t=<PRINTLN> "(" ex=Expression() ")" ";" {return new Print(ex);}
+		| t=<ID> {id = new Identifier(t.beginLine, t.beginColumn, t.image);} (("=" ex=Expression() ";" {return new Assign(id, ex);} )
+                    | ("[" ex1=Expression() "]" "=" ex=Expression() ";" {return new ArrayAssign(id,ex1,ex);}))
+	}
+	catch (ParseException e)
+	{
+		error_to(SEMICOLON);
+                return null;
+	}
+}
+
+Expression Expression():
+{Token t; Expression ex; Identifier id;}
+{
+	try
+	{
+		(t=<NUM> {ex = new IntegerLiteral(Integer.parseInt(t.image));}
+		|<TRUE> {ex = new True();}
+		|<FALSE> {ex = new False();}
+		|t=<ID> {ex = new IdentifierExp(t.beginLine, t.beginColumn, t.image);}
+		|<THIS> {ex = new This();}
+		| "new"  (("int" "[" ex=Expression() "]" {ex = new NewArray(ex);}) | (t=<ID> "(" ")" {id=new Identifier(t.beginLine, t.beginColumn, t.image); ex = new NewObject(id);}))
+		|("!" ex=Expression()) {ex = new Not(ex);}
+		|("(" ex=Expression() ")")  )
+		(LOOKAHEAD(2) ex=ExpressionPrime(ex))*
+
+                {return ex;}
+	}
+	catch (ParseException e)
+	{
+		error_to(SEMICOLON);
+                return null;
+	}
+}
+
+Expression ExpressionPrime(Expression ex):
+{Expression e1; Token t; LinkedList<Expression> args = new LinkedList<Expression>();}
+{
+	try
+	{
+		"&&" e1=Expression() {return new And(ex,e1);}
+                |"<" e1=Expression() {return new LessThan(ex,e1);}
+                |"+" e1=Expression() {return new Plus(ex,e1);}
+                |"-" e1=Expression() {return new Minus(ex,e1);}
+                |"*" e1=Expression() {return new Times(ex,e1);}
+		| "[" e1=Expression() "]" {return new ArrayLookup(ex,e1);}
+		| ".length" {return new ArrayLength(ex);}
+                | {Expression arg;} "."t=<ID> "(" [arg=Expression() {args.add(arg);} ("," arg=Expression() {args.add(arg);})*] ")" {return new Call(ex, new Identifier(t.beginLine, t.beginColumn, t.image), args);}
+	}
+	catch (ParseException e)
+	{
+		error_to(SEMICOLON);
+                return null;
+	}
+}

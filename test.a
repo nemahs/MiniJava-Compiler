@@ -1,0 +1,104 @@
+.section "text"
+.global main
+.align 4
+
+!------main----
+main:
+	save %sp,0,%sp
+	MOV 4,%o0
+	CALL _alloc_object
+	NOP
+	MOV %o0,%l0
+	MOV %l0,%l1
+	MOV %l1,%o0
+	MOV 10,%o1
+	CALL Fac$ComputeFac002
+	NOP
+	MOV %o0,%l2
+	MOV %l2,%l3
+	MOV %l3,%o0
+	CALL println
+	NOP
+	MOV %o0,%l4
+	JMP mainFuncEnd
+mainFuncEnd:
+	ret
+	restore
+
+!------ComputeFac004----
+Fac$ComputeFac002:
+	save %sp,8,%sp
+	MOV 1,%l0
+	CMP %i0,1
+	BL if$then008
+	NOP
+	JMP if$else009
+if$else009:
+	MOV 0,%l0
+	JMP if$then008
+if$then008:
+	CMP %l0,1
+	BE if$then005
+	NOP
+	JMP if$else006
+if$else006:
+	SUB %fp,4,%l1
+	MOV %l1,%l2
+	MOV %i0,%l3
+	MOV %l4,%o0
+	SUB %i0,1,%l5
+	MOV %l5,%o1
+	CALL Fac$ComputeFac002
+	NOP
+	MOV %o0,%l6
+	MOV %l6,%l7
+	LD [%fp - 8],%g3
+	SMUL %l3,%l7,%g3
+	ST %g3,[%fp - 8]
+	LD [%fp - 8],%g1
+	LD [%fp - 12],%g3
+	ST %g1,[%g3]
+	ST %g1,[%fp - 8]
+	ST %g3,[%fp - 12]
+	JMP if$end007
+if$end007:
+	LD [%fp - 16],%g3
+	SUB %fp,4,%g3
+	ST %g3,[%fp - 16]
+	LD [%fp - 16],%g1
+	LD [%fp - 20],%g3
+	LD [%g1],%g3
+	ST %g1,[%fp - 16]
+	ST %g3,[%fp - 20]
+	LD [%fp - 20],%g1
+	LD [%fp - 24],%g3
+	LD [%g1],%g3
+	ST %g1,[%fp - 20]
+	ST %g3,[%fp - 24]
+	LD [%fp - 24],%g1
+	LD [%fp - 28],%g3
+	MOV %g1,%g3
+	ST %g1,[%fp - 24]
+	ST %g3,[%fp - 28]
+	JMP ComputeFac004FuncEnd
+if$then005:
+	LD [%fp - 32],%g3
+	MOV 1,%g3
+	ST %g3,[%fp - 32]
+	LD [%fp - 36],%g3
+	SUB %fp,4,%g3
+	ST %g3,[%fp - 36]
+	LD [%fp - 36],%g1
+	LD [%fp - 40],%g3
+	LD [%g1],%g3
+	ST %g1,[%fp - 36]
+	ST %g3,[%fp - 40]
+	LD [%fp - 32],%g1
+	LD [%fp - 40],%g3
+	ST %g1,[%g3]
+	ST %g1,[%fp - 32]
+	ST %g3,[%fp - 40]
+	JMP if$end007
+ComputeFac004FuncEnd:
+	ret
+	restore

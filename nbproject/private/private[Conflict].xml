@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="1">
+        <file>
+            <url>src/Sparc/Frame.java</url>
+            <bookmark id="1">
+                <name/>
+                <line>46</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>jar:file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/support.jar!/assem/LabelInstruction.java</file>
+            <file>file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/MiniJava.java</file>
+            <file>jar:file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/support.jar!/tree/LABEL.java</file>
+            <file>file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/IRVisitor.java</file>
+            <file>file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/Token.java</file>
+            <file>file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/MiniJavaConstants.java</file>
+            <file>file:/C:/Users/Nemahs/Google%20Drive/Compiler/src/compiler/Munch.java</file>
+        </group>
+    </open-files>
+</project-private>
